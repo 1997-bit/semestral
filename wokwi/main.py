@@ -1,7 +1,8 @@
-# Loop principal: boton, temperatura, LCD, datos, MQTT y Adafruit
+# Orientado a eventos. La interrupcion del boton y el temporizador solo marcan,
+# el loop hace el trabajo porque MQTT no se puede usar dentro de una interrupcion
 
+from machine import Pin, Timer
 from time import sleep_ms
-import ujson
 import sensores
 import actuadores
 import alarma
@@ -10,6 +11,18 @@ import adafruit
 
 cliente = None
 cliente_aio = None
+boton_pendiente = False
+lectura_pendiente = False
+
+
+def al_presionar(pin):
+    global boton_pendiente
+    boton_pendiente = True
+
+
+def al_tocar(timer):
+    global lectura_pendiente
+    lectura_pendiente = True
 
 
 def procesar_comando(accion, origen):
@@ -17,21 +30,13 @@ def procesar_comando(accion, origen):
     datos = {"accion": accion, "origen": origen, "resultado": resultado}
     print("[CMD]", datos)
     mqtt.publicar(cliente, mqtt.TOPIC_PUB_ACK, datos)
-    return resultado
 
 
 def recepcion_comandos(topic, msg):
-    # HiveMQ manda JSON: {"accion": "encender_frio"}
-    try:
-        accion = ujson.loads(msg)["accion"]
-    except (ValueError, KeyError):
-        print("[CMD] mensaje invalido:", msg)
-        return
-    procesar_comando(accion, "mqtt")
+    procesar_comando(msg.decode(), "mqtt")
 
 
 def recepcion_adafruit(topic, msg):
-    # Adafruit manda el texto solo: encender_frio
     procesar_comando(msg.decode(), "adafruit")
 
 
@@ -40,9 +45,8 @@ def enviar_datos():
 
     evento = alarma.revisar(temperatura)
     if evento:
-        datos_evento = {"tipo": evento}
-        print("[EVENTO]", datos_evento)
-        mqtt.publicar(cliente, mqtt.TOPIC_PUB_EVENTOS, datos_evento)
+        print("[EVENTO]", evento)
+        mqtt.publicar(cliente, mqtt.TOPIC_PUB_EVENTOS, {"tipo": evento})
 
     datos = {
         "temperatura": temperatura,
@@ -57,37 +61,34 @@ def enviar_datos():
 
 
 def main():
-    global cliente, cliente_aio
+    global cliente, cliente_aio, boton_pendiente, lectura_pendiente
     actuadores.iniciar()
     mqtt.conectar_wifi()
     cliente = mqtt.conectar_broker(recepcion_comandos)
     cliente_aio = adafruit.conectar(recepcion_adafruit)
-    actuadores.actualizar_indicadores(alarma.estado)  # ya conectado: verde o rojo
-
-    boton_antes = False
-    vueltas = 0
+    actuadores.actualizar_indicadores(alarma.estado)  # ya conectado, verde o rojo
+    lecturas = 0
 
     while True:
-        # Comandos de HiveMQ y Adafruit
         cliente.check_msg()
         cliente_aio.check_msg()
 
-        # Boton: solo al presionar, silencia la alarma
-        boton = sensores.boton_presionado()
-        if boton and not boton_antes:
+        if boton_pendiente:
+            boton_pendiente = False
             procesar_comando("silenciar", "boton")
-        boton_antes = boton
 
-        # Datos cada 2 s (el DHT22 no lee mas rapido), Adafruit cada 10 s (limite 30 datos/min)
-        vueltas += 1
-        if vueltas % 20 == 0:
+        if lectura_pendiente:
+            lectura_pendiente = False
             datos = enviar_datos()
-        if vueltas == 100:
-            adafruit.publicar(cliente_aio, datos)
-            vueltas = 0
+            lecturas += 1
+            if lecturas % 5 == 0:  # Adafruit cada 10 s, limite 30 datos/min
+                adafruit.publicar(cliente_aio, datos)
 
-        sleep_ms(100)
+        sleep_ms(50)
 
+
+sensores.boton.irq(trigger=Pin.IRQ_FALLING, handler=al_presionar)
+Timer(period=2000, mode=Timer.PERIODIC, callback=al_tocar)  # DHT22 minimo 2 s
 
 # Si se cae la red, reconecta todo
 while True:

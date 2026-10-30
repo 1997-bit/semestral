@@ -46,7 +46,8 @@
       "left": -124.8,
       "attrs": {
         "color": "green",
-        "xray": "1"
+        "xray": "1",
+        "bounce": "0"
       }
     },
     {

@@ -1,4 +1,4 @@
-# Nube: Adafruit IO por MQTT
+# Adafruit IO por MQTT
 
 from umqttsimple import MQTTClient
 import secretos
@@ -18,4 +18,5 @@ def conectar(recepcion_comandos):
 
 def publicar(cliente, datos):
     for feed in datos:
-        cliente.publish(FEEDS + feed, str(datos[feed]))
+        if datos[feed] is not None:  # DHT22 sin lectura
+            cliente.publish(FEEDS + feed, str(datos[feed]))

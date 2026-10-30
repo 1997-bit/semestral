@@ -5,7 +5,7 @@ import pines
 led_rojo = Pin(pines.LED_R_PIN, Pin.OUT)
 led_verde = Pin(pines.LED_G_PIN, Pin.OUT)
 led_azul = Pin(pines.LED_B_PIN, Pin.OUT)
-rele = Pin(pines.RELE_PIN, Pin.OUT)
+relay = Pin(pines.RELAY_PIN, Pin.OUT)
 
 buzzer = PWM(Pin(pines.BUZZER_PIN))
 buzzer.freq(2000)
@@ -27,13 +27,13 @@ def encender_zumbador():
 def apagar_zumbador():
     buzzer.duty_u16(0)
 
-# Rele del equipo de frio
+# Relay del equipo de frio
 def encender_frio():
-    rele.value(1)
+    relay.value(1)
 
 
 def apagar_frio():
-    rele.value(0)
+    relay.value(0)
 
 # LCD
 def mostrar(linea1, linea2=""):

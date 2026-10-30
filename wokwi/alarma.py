@@ -18,11 +18,15 @@ def revisar(temperatura):
     """Cambia de estado si la temperatura sale o vuelve al rango. Evento o None"""
     if temperatura is None:
         return None
-    fuera = temperatura < pines.TEMP_MIN or temperatura > pines.TEMP_MAX
-    if fuera and estado == NORMAL:
+    if estado == NORMAL and temperatura > pines.TEMP_MAX:
         cambiar_estado(ALARMA)
-        return "temperatura_fuera"
-    if not fuera and estado == ALARMA:
+        actuadores.encender_frio()
+        return "temperatura_alta"
+    if estado == NORMAL and temperatura < pines.TEMP_MIN:
+        cambiar_estado(ALARMA)
+        actuadores.apagar_frio()
+        return "temperatura_baja"
+    if estado == ALARMA and pines.TEMP_MIN <= temperatura <= pines.TEMP_MAX:
         cambiar_estado(NORMAL)
         return "temperatura_normal"
     return None

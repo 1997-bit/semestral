@@ -2,17 +2,17 @@
 
 Proyecto Final, Desarrollo de Software VIII.
 
-Integrantes: Arles, Gloria, Luis, Juan, Alex.
+Arles, Gloria, Luis, Juan, Alex.
 
-Monitoreo de nevera de vacunas. Rango válido: 2 a 8 °C.
+Monitoreo de nevera de vacunas entre 2 y 8 °C.
 
 ![Circuito](documentos/capturas/wokwi.png)
 
 | | |
 |---|---|
-| Placa | Raspberry Pi Pico W (Wokwi) |
+| Placa | Raspberry Pi Pico W en Wokwi |
 | Sensores | DHT22, LDR, potenciómetro, botón |
-| Actuadores | LED RGB, zumbador, relé, LCD |
+| Actuadores | LED RGB, zumbador, relay, LCD |
 | MQTT | HiveMQ |
 | Base de datos | MariaDB |
 | Nube | Adafruit IO |
@@ -27,29 +27,29 @@ Monitoreo de nevera de vacunas. Rango válido: 2 a 8 °C.
 | Botón | GP15 | Silenciar |
 | LED RGB | GP18, GP17, GP16 | Estado |
 | Zumbador | GP21 | Alarma |
-| Relé | GP10 | Compresor |
+| Relay | GP10 | Compresor |
 | LCD I2C | GP0, GP1 | Pantalla |
 
 ## Flujo
 
 1. Lectura cada 2 s, publica en `ds8/frio/datos`.
-2. Fuera de rango: `ALARMA`, publica en `ds8/frio/eventos`.
+2. Fuera de rango pasa a `ALARMA` y publica en `ds8/frio/eventos`. Sobre 8 °C enciende el relay, bajo 2 °C lo apaga.
 3. Adafruit IO cada 10 s.
 4. Comandos por `ds8/frio/comandos` o Adafruit IO, respuesta en `ds8/frio/ack`.
 5. `puente/` guarda todo en MariaDB.
 
 ## Estructura
 
-```
-wokwi/       Pico W y diagram.json
-puente/      MQTT a MariaDB
-sql/         Tablas y consultas
-documentos/  Enunciado, contrato, tareas, capturas
-```
+| Carpeta | Contenido |
+|---|---|
+| `wokwi/` | Pico W y diagram.json |
+| `puente/` | MQTT a MariaDB |
+| `sql/` | Tablas y consultas |
+| `documentos/` | Enunciado, contrato, tareas, capturas |
 
 ## Uso
 
-Base de datos:
+### Base de datos
 
 ```
 mariadb -u root -e "CREATE USER 'ds8'@'localhost' IDENTIFIED BY 'ds8'; GRANT ALL ON frio.* TO 'ds8'@'localhost';"
@@ -57,15 +57,15 @@ mariadb -u root < sql/schema.sql
 mariadb -u root < sql/consultas.sql
 ```
 
-Puente:
+### Puente
 
 ```
-pip install paho-mqtt pymysql
+pip install -r requirements.txt
 cd puente
 python logger.py
 ```
 
-Wokwi:
+### Wokwi
 
 1. Proyecto Pico W con MicroPython.
 2. Subir `wokwi/`.
