@@ -2,55 +2,65 @@
 
 ## Pines
 
-Los define Gloria en `wokwi/pines.py` junto con el circuito.
+`wokwi/pines.py`, igual que `diagram.json`.
 
 ## Sensores
 
 ```python
 leer_temperatura()  # grados
-puerta_abierta()    # True / False (LDR)
-leer_bateria()      # 0 a 100 (potenciómetro)
-boton_presionado()  # True / False
+puerta_abierta()  # True / False, LDR
+leer_bateria()  # 0 a 100, potenciómetro
+boton  # Pin, interrupcion en main.py
 ```
 
 ## Actuadores
 
 ```python
-encender_led() / apagar_led()
+establecer_color(rojo, verde, azul)  # LED RGB
 encender_zumbador() / apagar_zumbador()
-encender_frio() / apagar_frio()   # relé
-mostrar(texto)                    # LCD
+encender_frio() / apagar_frio()  # relay
+mostrar(linea1, linea2="")  # LCD
 ```
 
 ## Estados
 
-- `NORMAL`: temperatura entre 2 y 8 grados
-- `ALARMA`: temperatura fuera de 2 a 8 grados
+| Estado | Condición | Salida |
+|---|---|---|
+| Iniciando | Conectando | LED azul |
+| `NORMAL` | 2 a 8 °C | LED verde |
+| `ALARMA` | Fuera de rango | LED rojo y zumbador |
 
-Comandos: `encender_frio`, `apagar_frio`, `silenciar`
+Comandos `encender_frio`, `apagar_frio` y `silenciar`. El botón envía `silenciar`.
+
+`temperatura_alta` enciende el relay y `temperatura_baja` lo apaga.
 
 ## MQTT
 
-Servidor: `broker.hivemq.com`
+Broker `broker.hivemq.com`
 
 | Tema | Mensaje |
 |---|---|
 | `ds8/frio/datos` | `{"temperatura":5,"puerta":0,"bateria":90,"estado":"NORMAL"}` |
-| `ds8/frio/comandos` | `{"accion":"encender_frio"}` |
+| `ds8/frio/eventos` | `{"tipo":"temperatura_alta"}`, `temperatura_baja`, `temperatura_normal` |
+| `ds8/frio/comandos` | `encender_frio` |
+| `ds8/frio/ack` | `{"accion":"encender_frio","origen":"mqtt","resultado":"ok"}` |
 
-## Base de datos (SQLite)
+## MariaDB
 
 | Tabla | Columnas |
 |---|---|
 | `lecturas` | id, temperatura, puerta, bateria, estado, fecha |
 | `eventos` | id, tipo, fecha |
-| `comandos` | id, accion, fecha |
+| `comandos` | id, accion, origen, resultado, fecha |
 
-## ThingSpeak
+## Adafruit IO
 
-| Campo | Dato |
+Cuenta en `wokwi/secretos.py`, copiado de `secretos_ejemplo.py`.
+
+| Feed | Dato |
 |---|---|
-| field1 | temperatura |
-| field2 | puerta |
-| field3 | bateria |
-| field4 | estado (0 normal, 1 alarma) |
+| `temperatura` | grados |
+| `puerta` | 0 cerrada, 1 abierta |
+| `bateria` | 0 a 100 |
+| `estado` | NORMAL / ALARMA |
+| `comandos` | `encender_frio`, `apagar_frio`, `silenciar` |
