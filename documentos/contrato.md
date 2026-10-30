@@ -2,7 +2,7 @@
 
 ## Pines
 
-Los define Gloria en `wokwi/pines.py` junto con el circuito.
+`wokwi/pines.py`, igual que `diagram.json`.
 
 ## Sensores
 
@@ -16,18 +16,19 @@ boton_presionado()  # True / False
 ## Actuadores
 
 ```python
-encender_led() / apagar_led()
+establecer_color(rojo, verde, azul)  # LED RGB
 encender_zumbador() / apagar_zumbador()
 encender_frio() / apagar_frio()   # relé
-mostrar(texto)                    # LCD
+mostrar(linea1, linea2="")        # LCD
 ```
 
 ## Estados
 
-- `NORMAL`: temperatura entre 2 y 8 grados
-- `ALARMA`: temperatura fuera de 2 a 8 grados
+- `NORMAL`: 2 a 8 °C, LED verde
+- `ALARMA`: fuera de rango, LED rojo y zumbador
+- Iniciando: LED azul
 
-Comandos: `encender_frio`, `apagar_frio`, `silenciar`
+Comandos: `encender_frio`, `apagar_frio`, `silenciar`. Botón: `silenciar`.
 
 ## MQTT
 
@@ -36,21 +37,26 @@ Servidor: `broker.hivemq.com`
 | Tema | Mensaje |
 |---|---|
 | `ds8/frio/datos` | `{"temperatura":5,"puerta":0,"bateria":90,"estado":"NORMAL"}` |
+| `ds8/frio/eventos` | `{"tipo":"temperatura_fuera"}` o `{"tipo":"temperatura_normal"}` |
 | `ds8/frio/comandos` | `{"accion":"encender_frio"}` |
+| `ds8/frio/ack` | `{"accion":"encender_frio","origen":"mqtt","resultado":"ok"}` |
 
-## Base de datos (SQLite)
+## Base de datos (MariaDB)
 
 | Tabla | Columnas |
 |---|---|
 | `lecturas` | id, temperatura, puerta, bateria, estado, fecha |
 | `eventos` | id, tipo, fecha |
-| `comandos` | id, accion, fecha |
+| `comandos` | id, accion, origen, resultado, fecha |
 
-## ThingSpeak
+## Adafruit IO
 
-| Campo | Dato |
+Cuenta en `wokwi/secretos.py` (ver `secretos_ejemplo.py`).
+
+| Feed | Dato |
 |---|---|
-| field1 | temperatura |
-| field2 | puerta |
-| field3 | bateria |
-| field4 | estado (0 normal, 1 alarma) |
+| `temperatura` | grados |
+| `puerta` | 0 cerrada, 1 abierta |
+| `bateria` | 0 a 100 |
+| `estado` | NORMAL / ALARMA |
+| `comandos` | `encender_frio`, `apagar_frio`, `silenciar` |

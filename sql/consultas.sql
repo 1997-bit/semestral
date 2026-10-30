@@ -1,0 +1,20 @@
+USE frio;
+
+CREATE OR REPLACE VIEW ultimas_lecturas AS
+SELECT * FROM lecturas ORDER BY id DESC LIMIT 50;
+
+CREATE OR REPLACE VIEW ultimos_eventos AS
+SELECT * FROM eventos ORDER BY id DESC LIMIT 50;
+
+CREATE OR REPLACE VIEW ultimos_comandos AS
+SELECT * FROM comandos ORDER BY id DESC LIMIT 50;
+
+CREATE OR REPLACE VIEW lecturas_en_alarma AS
+SELECT * FROM lecturas WHERE estado = 'ALARMA';
+
+DELIMITER //
+CREATE OR REPLACE PROCEDURE lecturas_entre(IN desde DATETIME, IN hasta DATETIME)
+BEGIN
+    SELECT * FROM lecturas WHERE fecha BETWEEN desde AND hasta;
+END //
+DELIMITER ;
